@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-100 to-purple-300 min-h-screen flex items-center justify-center p-6 transition duration-500" id="body">
+
+  <div class="w-full max-w-xl bg-white/80 backdrop-blur-lg shadow-2xl rounded-2xl p-8 transition" id="cardBox">
+    <h2 class="text-3xl font-semibold text-center text-purple-900 mb-10"><span class="bg-purple-200 px-6 py-3 rounded-lg">Quiz App</span></h2>
+
+    <!-- Progress Bar -->
+     <h3 class="text-lg font-semibold text-purple-800 mb-3">Progress Bar:</h3>
+    <div class="w-full bg-gray-300 h-3 rounded-full overflow-hidden mb-4">
+      <div id="progressBar" class="h-full bg-purple-600 w-0 transition-all duration-500"></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="text-center text-lg font-semibold text-purple-800 mb-3">
+      Time Left: <span id="timer" class="text-red-600">15</span> sec
+    </div>
+
+    <div id="quizBox" class="space-y-4">
+      <h3 id="question" class="text-lg font-semibold text-gray-800"></h3>
+      <div id="answers" class="space-y-3"></div>
+
+      <div class="flex justify-between mt-4">
+        <button id="nextBtn" class="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Next</button>
+        <button id="submitBtn" class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition hidden">Submit</button>
+      </div>
+    </div>
+
+    <!-- Result Box -->
+    <div id="resultBox" class="hidden text-center space-y-4 animate-fade-in">
+      <h2 class="text-2xl font-bold text-purple-800">Your Score</h2>
+      <p id="scoreText" class="text-lg font-semibold text-gray-700"></p>
+      <button id="restartBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const originalQuestions = [
+      { question: "Which language runs in a web browser?", options: ["Java", "C", "Python", "JavaScript"], answer: 3 },
+      { question: "What does CSS stand for?", options: ["Central Style Sheets", "Cascading Style Sheets", "Computer Style System", "Creative Style System"], answer: 1 },
+      { question: "What does HTML stand for?", options: ["HyperText Markup Language", "Home Tool Markup Language", "Hyperlinks Text Mark", "None"], answer: 0 },
+      { question: "Which tag is used for JavaScript?", options: ["&lt;javascript&gt;", "&lt;js&gt;", "&lt;script&gt;", "&lt;code&gt;"], answer: 2 },
+      { question: "Which of these is a backend language?", options: ["PHP", "HTML", "CSS", "Tailwind"], answer: 0 }
+    ];
+
+    let questions = [];
+    let index = 0;
+    let score = 0;
+    let timeLeft = 15;
+    let timerInterval;
+
+    const body = document.getElementById("body");
+    const cardBox = document.getElementById("cardBox");
+    const darkToggle = document.getElementById("darkToggle");
+    const questionEl = document.getElementById("question");
+    const answersEl = document.getElementById("answers");
+    const nextBtn = document.getElementById("nextBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultBox = document.getElementById("resultBox");
+    const quizBox = document.getElementById("quizBox");
+    const scoreText = document.getElementById("scoreText");
+    const restartBtn = document.getElementById("restartBtn");
+    const timerDisplay = document.getElementById("timer");
+    const progressBar = document.getElementById("progressBar");
+
+    function shuffleQuestions() {
+      questions = [...originalQuestions]
+        .map(q => ({ sort: Math.random(), value: q }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(obj => obj.value);
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timeLeft = 15;
+      timerDisplay.textContent = timeLeft;
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          nextBtn.click();
+        }
+      }, 1000);
+    }
+
+    function updateProgress() {
+      const progress = ((index + 1) / questions.length) * 100;
+      progressBar.style.width = progress + "%";
+    }
+
+    function loadQuestion() {
+      startTimer();
+      updateProgress();
+
+      const q = questions[index];
+      questionEl.textContent = q.question;
+      answersEl.innerHTML = "";
+
+      q.options.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.classList.add("animate-slide-up");
+        div.innerHTML = `
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input type="radio" name="answer" value="${i}" class="w-4 h-4 text-purple-600" />
+            <span>${opt}</span>
+          </label>`;
+        answersEl.appendChild(div);
+      });
+
+      if (index === questions.length - 1) {
+        nextBtn.classList.add("hidden");
+        submitBtn.classList.remove("hidden");
+      }
+    }
+
+    nextBtn.addEventListener("click", () => {
+      let selected = document.querySelector("input[name='answer']:checked");
+      if (!selected) return alert("Please select an answer!");
+
+      if (parseInt(selected.value) === questions[index].answer) score++;
+
+      index++;
+      loadQuestion();
+    });
+
+    submitBtn.addEventListener("click", () => {
+      let selected = document.querySelector("input[name='answer']:checked");
+      if (!selected) return alert("Please select an answer!");
+
+      if (parseInt(selected.value) === questions[index].answer) score++;
+
+      clearInterval(timerInterval);
+      quizBox.classList.add("hidden");
+      resultBox.classList.remove("hidden");
+      scoreText.textContent = `${score} / ${questions.length}`;
+    });
+
+    restartBtn.addEventListener("click", () => {
+      index = 0;
+      score = 0;
+      shuffleQuestions();
+      clearInterval(timerInterval);
+      quizBox.classList.remove("hidden");
+      resultBox.classList.add("hidden");
+      nextBtn.classList.remove("hidden");
+      submitBtn.classList.add("hidden");
+      loadQuestion();
+    });
+
+    shuffleQuestions();
+    loadQuestion();
+  </script>
+</body>
+</html>
